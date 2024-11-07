@@ -14,9 +14,13 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/client/index.html");
 });
 
+//route for the login page
 app.get("/login", (req, res) => {
-  res.sendFile(__dirname + "/client/login.html")
-})
+  res.sendFile(__dirname + "/client/login.html");
+});
+
+
+
 // Initialize the REST api
 initializeAPI(app);
 
