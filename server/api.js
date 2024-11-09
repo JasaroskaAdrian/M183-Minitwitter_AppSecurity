@@ -1,5 +1,6 @@
 const { initializeDatabase, queryDB, insertDB } = require("./database");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 let db;
 
 const SECRET_KEY = process.env.SECRET_KEY || "your_super_secret_key"; // Define the secret key
@@ -7,7 +8,7 @@ const SECRET_KEY = process.env.SECRET_KEY || "your_super_secret_key"; // Define 
 const initializeAPI = async (app) => {
   db = await initializeDatabase();
   
-  // Public route: login
+  
   app.post("/api/login", login);
 
   // Protected routes with authentication middleware
@@ -19,17 +20,25 @@ const initializeAPI = async (app) => {
 const login = async (req, res) => {
   const { username, password } = req.body;
 
-  // Query database for user with the provided username and password
-  const query = `SELECT * FROM users WHERE username = ? AND password = ?`;
-  const user = await queryDB(db, query, [username, password]);
+  
+  const query = `SELECT * FROM users WHERE username = ?`;
+  const user = await queryDB(db, query, [username]);
 
   if (user.length === 1) {
-    const token = jwt.sign({ userId: user[0].id }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token });
-  } else {
-    res.status(401).json({ message: "Invalid credentials" });
+    // Check if the password matches
+    const validPassword = await bcrypt.compare(password, user[0].password);
+    console.log(`User found: ${username}, Password valid: ${validPassword}; ${password}`);
+    console.log(`Stored hashed Password: ${user[0].password}`)
+    if (validPassword) {
+      const token = jwt.sign({ userId: user[0].id }, SECRET_KEY, { expiresIn: '1h' });
+      return res.json({ token });
+    }
   }
+  console.log("Invalid credentials");
+  res.status(401).json({ message: "Invalid credentials" });
 };
+
+
 
 // Middleware to authenticate JWT token
 const authenticateToken = (req, res, next) => {
@@ -40,12 +49,11 @@ const authenticateToken = (req, res, next) => {
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
     if (err) return res.sendStatus(403); // Invalid token, forbidden
-    req.user = user; // Attach decoded user info to the request
-    next(); // Continue to the next middleware or route handler
+    req.user = user; 
+    next(); 
   });
 };
 
-// Route handler to get feed (protected)
 const getFeed = async (req, res) => {
   const query = req.query.q;
   const tweets = await queryDB(db, query);
