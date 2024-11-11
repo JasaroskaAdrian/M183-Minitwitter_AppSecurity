@@ -3,8 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const postTweetButton = document.getElementById("post-tweet");
   const logoutButton = document.getElementById("logout");
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user) {
+  const token = localStorage.getItem("token");
+  if (!token) {
     window.location.href = "/login.html";
   }
 
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   logoutButton.addEventListener("click", () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem("token");
     window.location.href = "/login.html";
   });
 

@@ -21,9 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
 
         if (data?.token) {
-          // Store the token and user data in localStorage
+          // Store the token in localStorage
           localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
           
           // Redirect to homepage
           window.location.href = "/";

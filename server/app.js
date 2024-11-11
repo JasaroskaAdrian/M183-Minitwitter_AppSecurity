@@ -25,7 +25,7 @@ app.get("/login", (req, res) => {
 initializeAPI(app);
 
 //start the web server
-const serverPort = process.env.PORT || 3000;
+const serverPort = process.env.PORT || 3001;
 server.listen(serverPort, () => {
   console.log(`Express Server started on port ${serverPort}`);
 });
