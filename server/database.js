@@ -4,12 +4,12 @@ const saltRounds = 10;
 
 const tweetsTableExists =
   "SELECT name FROM sqlite_master WHERE type='table' AND name='tweets'";
-const createTweetsTable = `CREATE TABLE tweets (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT,§
-  timestamp TEXT,
-  text TEXT
-)`;
+  const createTweetsTable = `CREATE TABLE tweets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    timestamp TEXT,  -- Ensure this line is here
+    text TEXT
+  )`;
 const usersTableExists =
   "SELECT name FROM sqlite_master WHERE type='table' AND name='users'";
 const createUsersTable = `CREATE TABLE users (

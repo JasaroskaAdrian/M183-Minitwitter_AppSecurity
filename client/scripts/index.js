@@ -3,6 +3,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const postTweetButton = document.getElementById("post-tweet");
   const logoutButton = document.getElementById("logout");
 
+  const escapeCode = (str) => {
+    if (!str) return ''; // Return an empty string if str is null or undefined
+    return str.replace(/[&<>"']/g, (match) => {
+      const escapeChars = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      };
+      return escapeChars[match];
+    });
+  };
+  
+
   const token = localStorage.getItem("token");
   if (!token) {
     window.location.href = "/login.html";
@@ -10,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Retrieve the user information from localStorage
   const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || !user.username) {
+  if (!user || !user.username || user === undefined) { 
     console.error("User information not found. Redirecting to login.");
     window.location.href = "/login.html";
   }
@@ -28,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="flex flex-col grow">
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between text-gray-200">
-                    <h3 class="font-semibold">${tweet.username}</h3>
+                    <h3 class="font-semibold">${escapeCode(tweet.username)}</h3>
                     <p class="text-sm">${date}</p>
                     </div>
                 </div>
@@ -41,13 +56,17 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const getFeed = async () => {
-    const query = "SELECT * FROM tweets ORDER BY id DESC";
-    const response = await fetch(`/api/feed?q=${query}`, {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const token = user?.token;
+
+    const query = ""; // Define query here for all tweets or a search term
+
+    const response = await fetch(`/api/feed?q=${encodeURIComponent(query)}`, {
       headers: {
-        "Authorization": `Bearer ${token}`, // Include the token in the headers
+        Authorization: `Bearer ${token}`,
       },
     });
-  
+
     if (response.ok) {
       const tweets = await response.json();
       const tweetsHTML = tweets.map(generateTweet).join("");
@@ -59,23 +78,23 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Failed to load feed:", response.statusText);
     }
   };
-  
 
   const postTweet = async () => {
-    const username = user.username; // Use the parsed user information
-    const timestamp = new Date().toISOString();
-    const text = newTweetInput.value;
-    const query = `INSERT INTO tweets (username, timestamp, text) VALUES ('${username}', '${timestamp}', '${text}')`;
+    const text = newTweetInput.value.trim();
+
+    const query = text; // Use the tweet text as the query
+
     await fetch("/api/feed", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`, // Send the token for authentication
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ text }), // Send the tweet text as the query
     });
+
     await getFeed();
-    newTweetInput.value = "";
+    newTweetInput.value = ""; // Clear the input after posting
   };
 
   postTweetButton.addEventListener("click", postTweet);

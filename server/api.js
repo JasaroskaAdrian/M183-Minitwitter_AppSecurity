@@ -1,18 +1,41 @@
+const fs = require("fs");
 const { initializeDatabase, queryDB, insertDB } = require("./database");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const rateLimit = require('express-rate-limit');
 let db;
 
-const SECRET_KEY = process.env.SECRET_KEY || "your_super_secret_key"; // Define the secret key
+const SECRET_KEY = process.env.SECRET_KEY || "your_super_secret_key";
+
+// Logging function for all user activity
+const logActivity = (message) => {
+  const timestamp = new Date().toISOString();
+  const logEntry = `[${timestamp}] ${message}\n`;
+
+  // Log to console and write to server_logs.txt
+  console.log(logEntry.trim());
+  fs.appendFile("server_logs.txt", logEntry, (err) => {
+    if (err) console.error("Failed to write log:", err);
+  });
+};
+
+// Rate limiter to prevent brute-force attempts
+const visitLimit = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 5,
+  message: { error: 'Request Blocked, Too many Requests sent. Try again later.' },
+});
 
 const initializeAPI = async (app) => {
   db = await initializeDatabase();
   
-  
-  app.post("/api/login", login);
+  app.post("/api/login", visitLimit, login);
+  app.post("/api/logout", authenticateToken, logout);
 
-  // Protected routes with authentication middleware
+  // Fetch tweets with optional query parameter
   app.get("/api/feed", authenticateToken, getFeed);
+
+  // Post a tweet
   app.post("/api/feed", authenticateToken, postTweet);
 };
 
@@ -30,24 +53,27 @@ const login = async (req, res) => {
       console.log(`User found: ${username}, Password valid: ${validPassword}`);
 
       if (validPassword) {
-        const token = jwt.sign({ userId: user[0].id }, SECRET_KEY, { expiresIn: '1h' });
-        return res.json({ token, username: user[0].username }); //response for both the token and username of the user <3
+        const token = jwt.sign({ userId: user[0].id, username: user[0].username }, SECRET_KEY, { expiresIn: '1h' });
+        logActivity(`Login successful for user: ${username}`);
+        return res.json({ token, username: user[0].username });
       }
     }
 
-    // If login fails (user not found or invalid password), send a single 401 response
-    console.log("Invalid credentials");
+    logActivity(`Failed login attempt for username: ${username}`);
     return res.status(401).json({ message: "Invalid credentials" });
     
   } catch (error) {
     console.error("Error during login:", error);
-    // Send a single 500 response if an error occurs
-    return res.status(500).json({ message: "An error occurred during login" }); //-> Internal Server error, thought i might add this because i want to try and get as comfortable as possible with the uses of Status Codes <3
+    return res.status(500).json({ message: "An error occurred during login" });
   }
 };
 
-
-
+// Logout route handler
+const logout = (req, res) => {
+  const username = req.user.username;
+  logActivity(`Logout for user: ${username}`);
+  res.status(200).json({ message: "Logged out successfully" });
+};
 
 // Middleware to authenticate JWT token
 const authenticateToken = (req, res, next) => {
@@ -63,16 +89,38 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Fetch tweets from the database with optional query parameter
 const getFeed = async (req, res) => {
-  const query = req.query.q;
-  const tweets = await queryDB(db, query);
-  res.json(tweets);
+  const query = req.query.q || '';  // Default to an empty string if no query is provided
+
+  let sqlQuery = "SELECT * FROM tweets ORDER BY id DESC";
+  if (query) {
+    sqlQuery = `SELECT * FROM tweets WHERE text LIKE ? ORDER BY id DESC`;
+  }
+
+  try {
+    const tweets = await queryDB(db, sqlQuery, query ? [`%${query}%`] : []);
+    res.json(tweets);
+  } catch (error) {
+    console.error("Failed to fetch tweets:", error);
+    res.status(500).json({ message: "Error fetching tweets" });
+  }
 };
 
 // Route handler to post a tweet (protected)
-const postTweet = (req, res) => {
-  insertDB(db, req.body.query);
-  res.json({ status: "ok" });
+const postTweet = async (req, res) => {
+  const { text } = req.body;
+  const username = req.user.username;
+  const timestamp = new Date().toISOString();
+
+  try {
+    const sqlQuery = "INSERT INTO tweets (username, timestamp, text) VALUES (?, ?, ?)";
+    await queryDB(db, sqlQuery, [username, timestamp, text]);
+    res.status(201).json({ message: "Tweet posted successfully" });
+  } catch (error) {
+    console.error("Failed to post tweet:", error);
+    res.status(500).json({ message: "Error posting tweet" });
+  }
 };
 
 module.exports = { initializeAPI };
