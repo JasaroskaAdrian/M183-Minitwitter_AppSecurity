@@ -20,23 +20,32 @@ const initializeAPI = async (app) => {
 const login = async (req, res) => {
   const { username, password } = req.body;
 
-  
-  const query = `SELECT * FROM users WHERE username = ?`;
-  const user = await queryDB(db, query, [username]);
+  try {
+    const query = `SELECT * FROM users WHERE username = ?`;
+    const user = await queryDB(db, query, [username]);
 
-  if (user.length === 1) {
-    // Check if the password matches
-    const validPassword = await bcrypt.compare(password, user[0].password);
-    console.log(`User found: ${username}, Password valid: ${validPassword}; ${password}`);
-    console.log(`Stored hashed Password: ${user[0].password}`)
-    if (validPassword) {
-      const token = jwt.sign({ userId: user[0].id }, SECRET_KEY, { expiresIn: '1h' });
-      return res.json({ token });
+    if (user.length === 1) {
+      // Check if the password matches
+      const validPassword = await bcrypt.compare(password, user[0].password);
+      console.log(`User found: ${username}, Password valid: ${validPassword}`);
+
+      if (validPassword) {
+        const token = jwt.sign({ userId: user[0].id }, SECRET_KEY, { expiresIn: '1h' });
+        return res.json({ token, username: user[0].username }); //response for both the token and username of the user <3
+      }
     }
+
+    // If login fails (user not found or invalid password), send a single 401 response
+    console.log("Invalid credentials");
+    return res.status(401).json({ message: "Invalid credentials" });
+    
+  } catch (error) {
+    console.error("Error during login:", error);
+    // Send a single 500 response if an error occurs
+    return res.status(500).json({ message: "An error occurred during login" }); //-> Internal Server error, thought i might add this because i want to try and get as comfortable as possible with the uses of Status Codes <3
   }
-  console.log("Invalid credentials");
-  res.status(401).json({ message: "Invalid credentials" });
 };
+
 
 
 

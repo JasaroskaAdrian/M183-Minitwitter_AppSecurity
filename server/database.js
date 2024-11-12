@@ -6,7 +6,7 @@ const tweetsTableExists =
   "SELECT name FROM sqlite_master WHERE type='table' AND name='tweets'";
 const createTweetsTable = `CREATE TABLE tweets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT,
+  username TEXT,§
   timestamp TEXT,
   text TEXT
 )`;

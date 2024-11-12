@@ -37,3 +37,5 @@
 | john         | 123456   |
 | jane         | 123456   |
 
+npm install aes-encryption
+

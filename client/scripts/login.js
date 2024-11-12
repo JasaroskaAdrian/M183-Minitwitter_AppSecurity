@@ -24,6 +24,10 @@ document.addEventListener("DOMContentLoaded", () => {
           // Store the token in localStorage
           localStorage.setItem("token", data.token);
           
+          if (data?.username) {
+            localStorage.setItem("user", JSON.stringify(data));
+          }
+          
           // Redirect to homepage
           window.location.href = "/";
         } else {

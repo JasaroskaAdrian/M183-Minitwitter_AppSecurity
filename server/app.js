@@ -19,8 +19,6 @@ app.get("/login", (req, res) => {
   res.sendFile(__dirname + "/client/login.html");
 });
 
-
-
 // Initialize the REST api
 initializeAPI(app);
 

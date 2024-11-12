@@ -8,6 +8,13 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = "/login.html";
   }
 
+  // Retrieve the user information from localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user || !user.username) {
+    console.error("User information not found. Redirecting to login.");
+    window.location.href = "/login.html";
+  }
+
   const generateTweet = (tweet) => {
     const date = new Date(tweet.timestamp).toLocaleDateString("de-CH", {
       hour: "numeric",
@@ -35,14 +42,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const getFeed = async () => {
     const query = "SELECT * FROM tweets ORDER BY id DESC";
-    const response = await fetch(`/api/feed?q=${query}`);
-    const tweets = await response.json();
-    const tweetsHTML = tweets.map(generateTweet).join("");
-    document.getElementById("feed").innerHTML = tweetsHTML;
+    const response = await fetch(`/api/feed?q=${query}`, {
+      headers: {
+        "Authorization": `Bearer ${token}`, // Include the token in the headers
+      },
+    });
+  
+    if (response.ok) {
+      const tweets = await response.json();
+      const tweetsHTML = tweets.map(generateTweet).join("");
+      document.getElementById("feed").innerHTML = tweetsHTML;
+    } else if (response.status === 401) {
+      console.error("Unauthorized access. Redirecting to login.");
+      window.location.href = "/login.html";
+    } else {
+      console.error("Failed to load feed:", response.statusText);
+    }
   };
+  
 
   const postTweet = async () => {
-    const username = user.username;
+    const username = user.username; // Use the parsed user information
     const timestamp = new Date().toISOString();
     const text = newTweetInput.value;
     const query = `INSERT INTO tweets (username, timestamp, text) VALUES ('${username}', '${timestamp}', '${text}')`;
@@ -50,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`, // Send the token for authentication
       },
       body: JSON.stringify({ query }),
     });
@@ -66,8 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   logoutButton.addEventListener("click", () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user"); // Remove user data on logout
     window.location.href = "/login.html";
   });
 
-  getFeed();
+  getFeed(); // Initial load of the feed
 });
