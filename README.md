@@ -26,7 +26,7 @@
    ```
 4. Open the app in your browser
    ```sh
-   http://localhost:3000
+   http://localhost:2183
    ```
 
 ### Test Users
@@ -37,5 +37,4 @@
 | john         | 123456   |
 | jane         | 123456   |
 
-npm install aes-encryption
 
