@@ -12,9 +12,10 @@ const logActivity = (message) => {
   const timestamp = new Date().toISOString();
   const logEntry = `[${timestamp}] ${message}\n`;
 
-  // Log to console and write to server_logs.txt
+  // Logs to console and writes to server_logs.txt
   console.log(logEntry.trim());
   fs.appendFile("server_logs.txt", logEntry, (err) => {
+    //If it fails then tells me that it failed and what happened
     if (err) console.error("Failed to write log:", err);
   });
 };
@@ -23,8 +24,8 @@ const logActivity = (message) => {
 const visitLimit = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 5,
-  message: { error: 'Request Blocked, Too many Requests sent. Try again later.' },
-});
+  message: { error: 'Further Requests Blocked, Too many Requests sent. Try again later.' },
+}); //Status Code 429
 
 const initializeAPI = async (app) => {
   db = await initializeDatabase();
@@ -32,10 +33,10 @@ const initializeAPI = async (app) => {
   app.post("/api/login", visitLimit, login);
   app.post("/api/logout", authenticateToken, logout);
 
-  // Fetch tweets with optional query parameter
+  // Fetch tweets with authentication Check Middleware
   app.get("/api/feed", authenticateToken, getFeed);
 
-  // Post a tweet
+  // Post a tweet with authentication Check Middleware
   app.post("/api/feed", authenticateToken, postTweet);
 };
 
@@ -48,7 +49,7 @@ const login = async (req, res) => {
     const user = await queryDB(db, query, [username]);
 
     if (user.length === 1) {
-      // Check if the password matches
+      // Check if the password matches, compares the password in the userinput with the one in the db
       const validPassword = await bcrypt.compare(password, user[0].password);
       console.log(`User found: ${username}, Password valid: ${validPassword}`);
 
@@ -68,7 +69,7 @@ const login = async (req, res) => {
   }
 };
 
-// Logout route handler
+// Logout route handler, for whatever reason the log to this isnt working at the moment
 const logout = (req, res) => {
   const username = req.user.username;
   logActivity(`Logout for user: ${username}`);
@@ -89,7 +90,7 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Fetch tweets from the database with optional query parameter
+// Fetches tweets from the database
 const getFeed = async (req, res) => {
   const query = req.query.q || '';  // Default to an empty string if no query is provided
 
@@ -99,11 +100,12 @@ const getFeed = async (req, res) => {
   }
 
   try {
-    const tweets = await queryDB(db, sqlQuery, query ? [`%${query}%`] : []);
+    const tweets = await queryDB(db, sqlQuery, query ? [`%${query}%`] : []); //LIKE Statement in SQL Syntax, wie oben bei const sqlquery
     res.json(tweets);
   } catch (error) {
     console.error("Failed to fetch tweets:", error);
     res.status(500).json({ message: "Error fetching tweets" });
+    
   }
 };
 
@@ -116,10 +118,10 @@ const postTweet = async (req, res) => {
   try {
     const sqlQuery = "INSERT INTO tweets (username, timestamp, text) VALUES (?, ?, ?)";
     await queryDB(db, sqlQuery, [username, timestamp, text]);
-    res.status(201).json({ message: "Tweet posted successfully" });
+    res.status(201).json({ message: "Tweet posted successfully" }); //CREATED 201, POST is Successful and Ressource got created
   } catch (error) {
     console.error("Failed to post tweet:", error);
-    res.status(500).json({ message: "Error posting tweet" });
+    res.status(500).json({ message: "Error posting tweet" }); //Just throw a Internal Server Error, because why not
   }
 };
 

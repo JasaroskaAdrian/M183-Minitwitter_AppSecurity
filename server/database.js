@@ -7,7 +7,7 @@ const tweetsTableExists =
   const createTweetsTable = `CREATE TABLE tweets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT,
-    timestamp TEXT,  -- Ensure this line is here
+    timestamp TEXT,
     text TEXT
   )`;
 const usersTableExists =
@@ -18,7 +18,6 @@ const createUsersTable = `CREATE TABLE users (
   password TEXT
 )`;
 
-// Function to seed the users table with hashed passwords
 const seedUsersTable = async (db) => {
   const users = [
     { username: 'switzerchees', password: '123456' },
@@ -34,8 +33,7 @@ const seedUsersTable = async (db) => {
   }
 };
 
-// Call this function inside your database initialization code
-// after creating the `users` table
+
 
 
 // Initialize the database, creating tables if they don't exist

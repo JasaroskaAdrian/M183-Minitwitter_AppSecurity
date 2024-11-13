@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const postTweetButton = document.getElementById("post-tweet");
   const logoutButton = document.getElementById("logout");
 
+  //This turns these &, <, >, "", ', into not potentially dangerous chars
   const escapeCode = (str) => {
     if (!str) return ''; // Return an empty string if str is null or undefined
     return str.replace(/[&<>"']/g, (match) => {
@@ -59,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const user = JSON.parse(localStorage.getItem("user"));
     const token = user?.token;
 
-    const query = ""; // Define query here for all tweets or a search term
+    const query = "";
 
     const response = await fetch(`/api/feed?q=${encodeURIComponent(query)}`, {
       headers: {
@@ -82,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const postTweet = async () => {
     const text = newTweetInput.value.trim();
 
-    const query = text; // Use the tweet text as the query
+    const query = text; // Uses the tweet text as the query
 
     await fetch("/api/feed", {
       method: "POST",
@@ -90,11 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ text }), // Send the tweet text as the query
+      body: JSON.stringify({ text }), // Sends the tweet text as the query
     });
 
     await getFeed();
-    newTweetInput.value = ""; // Clear the input after posting
+    newTweetInput.value = ""; // Clears the input after posting
   };
 
   postTweetButton.addEventListener("click", postTweet);
