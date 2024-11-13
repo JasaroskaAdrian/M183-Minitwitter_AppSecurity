@@ -31,7 +31,6 @@ const initializeAPI = async (app) => {
   db = await initializeDatabase();
   
   app.post("/api/login", visitLimit, login);
-  app.post("/api/logout", authenticateToken, logout);
   app.get("/api/feed", authenticateToken, getFeed);
   app.post("/api/feed", authenticateToken, postTweet);
 };
@@ -62,13 +61,6 @@ const login = async (req, res) => {
     console.error("Error during login:", error);
     return res.status(500).json({ message: "An error occurred during login" });
   }
-};
-
-// Logout route handler
-const logout = (req, res) => {
-  const username = req.user.username;
-  logActivity(`Logout for user: ${username}`);
-  res.status(200).json({ message: "Logged out successfully" });
 };
 
 // Middleware to authenticate JWT token

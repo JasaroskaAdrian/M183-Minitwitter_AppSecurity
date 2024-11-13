@@ -3,9 +3,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const postTweetButton = document.getElementById("post-tweet");
   const logoutButton = document.getElementById("logout");
 
-  // Escapes potentially dangerous characters -> TODO: DO it Server side, not client side
+  //This turns these &, <, >, "", ', into not potentially dangerous chars
   const escapeCode = (str) => {
-    if (!str) return '';
+    if (!str) return ''; // Return an empty string if str is null or undefined
     return str.replace(/[&<>"']/g, (match) => {
       const escapeChars = {
         "&": "&amp;",
@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return escapeChars[match];
     });
   };
+  
 
   const token = localStorage.getItem("token");
   if (!token) {
@@ -38,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     const tweetElement = `
         <div id="feed" class="flex flex-col gap-2 w-full">
-            <div class="bg-slate-600 rounded p-4 flex gap-4 items-center border-l-4 border-blue-400">
+            <div class="bg-slate-600 rounded p-4 flex gap-4 items-center border-l-4 border-blue-400" >
                 <img src="./img/tweet.png" alt="SwitzerChees" class="w-14 h-14 rounded-full" />
                 <div class="flex flex-col grow">
                 <div class="flex flex-col gap-2">
@@ -81,7 +82,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const postTweet = async () => {
     const text = newTweetInput.value.trim();
-    if (!text) return; // Ensure there's text to post
+
+    const query = text; // Uses the tweet text as the query
 
     await fetch("/api/feed", {
       method: "POST",
@@ -89,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text }), // Sends the tweet text as the query
     });
 
     await getFeed();
@@ -103,21 +105,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Updated logout button event handler
-  logoutButton.addEventListener("click", async () => {
-    const token = localStorage.getItem("token");
-
-    // Send a request to the server to log out
-    await fetch("/api/logout", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    // Clear localStorage and redirect to login page
+  logoutButton.addEventListener("click", () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem("user"); // Remove user data on logout
     window.location.href = "/login.html";
   });
 
