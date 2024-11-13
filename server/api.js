@@ -15,7 +15,6 @@ const logActivity = (message) => {
   // Logs to console and writes to server_logs.txt
   console.log(logEntry.trim());
   fs.appendFile("server_logs.txt", logEntry, (err) => {
-    //If it fails then tells me that it failed and what happened
     if (err) console.error("Failed to write log:", err);
   });
 };
@@ -25,18 +24,15 @@ const visitLimit = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 5,
   message: { error: 'Further Requests Blocked, Too many Requests sent. Try again later.' },
-}); //Status Code 429
+});
 
+// Initialize the API with database and routes
 const initializeAPI = async (app) => {
   db = await initializeDatabase();
   
   app.post("/api/login", visitLimit, login);
   app.post("/api/logout", authenticateToken, logout);
-
-  // Fetch tweets with authentication Check Middleware
   app.get("/api/feed", authenticateToken, getFeed);
-
-  // Post a tweet with authentication Check Middleware
   app.post("/api/feed", authenticateToken, postTweet);
 };
 
@@ -49,7 +45,6 @@ const login = async (req, res) => {
     const user = await queryDB(db, query, [username]);
 
     if (user.length === 1) {
-      // Check if the password matches, compares the password in the userinput with the one in the db
       const validPassword = await bcrypt.compare(password, user[0].password);
       console.log(`User found: ${username}, Password valid: ${validPassword}`);
 
@@ -69,7 +64,7 @@ const login = async (req, res) => {
   }
 };
 
-// Logout route handler, for whatever reason the log to this isnt working at the moment
+// Logout route handler
 const logout = (req, res) => {
   const username = req.user.username;
   logActivity(`Logout for user: ${username}`);
@@ -81,18 +76,18 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) return res.sendStatus(401); // No token, unauthorized
+  if (!token) return res.sendStatus(401);
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.sendStatus(403); // Invalid token, forbidden
-    req.user = user; 
-    next(); 
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
   });
 };
 
 // Fetches tweets from the database
 const getFeed = async (req, res) => {
-  const query = req.query.q || '';  // Default to an empty string if no query is provided
+  const query = req.query.q || '';
 
   let sqlQuery = "SELECT * FROM tweets ORDER BY id DESC";
   if (query) {
@@ -100,16 +95,16 @@ const getFeed = async (req, res) => {
   }
 
   try {
-    const tweets = await queryDB(db, sqlQuery, query ? [`%${query}%`] : []); //LIKE Statement in SQL Syntax, wie oben bei const sqlquery
+    const tweets = await queryDB(db, sqlQuery, query ? [`%${query}%`] : []);
+    logActivity(`User: ${req.user.username} fetched the tweets`);
     res.json(tweets);
   } catch (error) {
     console.error("Failed to fetch tweets:", error);
     res.status(500).json({ message: "Error fetching tweets" });
-    
   }
 };
 
-// Route handler to post a tweet (protected)
+// Route handler to post a tweet
 const postTweet = async (req, res) => {
   const { text } = req.body;
   const username = req.user.username;
@@ -118,10 +113,11 @@ const postTweet = async (req, res) => {
   try {
     const sqlQuery = "INSERT INTO tweets (username, timestamp, text) VALUES (?, ?, ?)";
     await queryDB(db, sqlQuery, [username, timestamp, text]);
-    res.status(201).json({ message: "Tweet posted successfully" }); //CREATED 201, POST is Successful and Ressource got created
+    logActivity(`User ${username} posted a new tweet: "${text}"`);
+    res.status(201).json({ message: "Tweet posted successfully" });
   } catch (error) {
     console.error("Failed to post tweet:", error);
-    res.status(500).json({ message: "Error posting tweet" }); //Just throw a Internal Server Error, because why not
+    res.status(500).json({ message: "Error posting tweet" });
   }
 };
 
