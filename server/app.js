@@ -7,7 +7,7 @@ const { initializeAPI } = require("./api");
 const app = express();
 app.use(express.json());
 
-// Global middleware to remove X-Powered-By header (place this at the very beginning)
+// Global middleware to remove X-Powered-By header
 app.use((req, res, next) => {
   res.removeHeader("X-Powered-By");
   next();
@@ -48,6 +48,23 @@ app.get("/login", (req, res) => {
 
 // Initialize the REST API routes
 initializeAPI(app);
+
+// Global error-handling middleware
+app.use((err, req, res, next) => {
+  const timestamp = new Date().toISOString();
+  const logEntry = `[${timestamp}] Error: ${err.message}\n`;
+
+  // Log the error to the console
+  console.error(logEntry.trim());
+
+  // Append the error to server_logs.txt
+  fs.appendFile("server_logs.txt", logEntry, (fsErr) => {
+    if (fsErr) console.error("Failed to write error log:", fsErr);
+  });
+
+  // Send a generic error response
+  res.status(500).json({ message: "An internal server error occurred." });
+});
 
 // Start the web server
 const serverPort = process.env.PORT || 3000;

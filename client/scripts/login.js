@@ -17,26 +17,31 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ username, password }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      try {
+        if (response.ok) {
+          const data = await response.json();
 
-        if (data?.token) {
-          // Store the token in localStorage
-          localStorage.setItem("token", data.token);
+          if (data?.token) {
+            // Store the token in localStorage
+            localStorage.setItem("token", data.token);
 
-          if (data?.username) {
-            localStorage.setItem("user", JSON.stringify(data));
+            if (data?.username) {
+              localStorage.setItem("user", JSON.stringify(data));
+            }
+
+            // Redirect to homepage
+            window.location.href = "/";
+          } else {
+            errorText.innerText = "Login failed: No token received.";
           }
-
-          // Redirect to homepage
-          window.location.href = "/";
+        } else if (response.status === 401) {
+          errorText.innerText = "Invalid username or password";
         } else {
-          errorText.innerText = "Login failed: No token received.";
+          errorText.innerText = "An unexpected error occurred. Please try again.";
         }
-      } else if (response.status === 401) {
-        errorText.innerText = "Invalid username or password";
-      } else {
-        errorText.innerText = "An unexpected error occurred. Please try again.";
+      } catch (error) {
+        console.error("Error processing the response:", error);
+        errorText.innerText = "Error processing the response. Please try again.";
       }
     } catch (error) {
       console.error("Login error:", error);

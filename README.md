@@ -1,6 +1,6 @@
 # M183-Minitwitter_AppSecurity
 
-    https://github.com/SwitzerChees/m183-minitwitter
+    Source: https://github.com/SwitzerChees/m183-minitwitter
  
  This is my Project Work for the Module 183, which its core Principle is Cyber-Security. Given an Application from my Teacher which has poor Security Choices or None. I have to Implement the optimal Security Aspects to this Application
 
@@ -10,7 +10,7 @@
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/SwitzerChees/m183-minitwitter
+   git clone https://github.com/JasaroskaAdrian/M183-Minitwitter_AppSecurity
    ```
 2. Install NPM packages
    ```sh

@@ -17,7 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return escapeChars[match];
     });
   };
-  
 
   const token = localStorage.getItem("token");
   if (!token) {
@@ -57,45 +56,60 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const getFeed = async () => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const token = user?.token;
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const token = user?.token;
 
-    const query = "";
+      const query = "";
 
-    const response = await fetch(`/api/feed?q=${encodeURIComponent(query)}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      const response = await fetch(`/api/feed?q=${encodeURIComponent(query)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (response.ok) {
-      const tweets = await response.json();
-      const tweetsHTML = tweets.map(generateTweet).join("");
-      document.getElementById("feed").innerHTML = tweetsHTML;
-    } else if (response.status === 401) {
-      console.error("Unauthorized access. Redirecting to login.");
-      window.location.href = "/login.html";
-    } else {
-      console.error("Failed to load feed:", response.statusText);
+      if (response.ok) {
+        const tweets = await response.json();
+        const tweetsHTML = tweets.map(generateTweet).join("");
+        document.getElementById("feed").innerHTML = tweetsHTML;
+      } else if (response.status === 401) {
+        console.error("Unauthorized access. Redirecting to login.");
+        window.location.href = "/login.html";
+      } else {
+        console.error("Failed to load feed:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching feed:", error);
+      alert("An error occurred while loading the feed.");
     }
   };
 
   const postTweet = async () => {
-    const text = newTweetInput.value.trim();
+    try {
+      const text = newTweetInput.value.trim();
 
-    const query = text; // Uses the tweet text as the query
+      const query = text; // Uses the tweet text as the query
 
-    await fetch("/api/feed", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ text }), // Sends the tweet text as the query
-    });
+      const response = await fetch("/api/feed", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text }), // Sends the tweet text as the query
+      });
 
-    await getFeed();
-    newTweetInput.value = ""; // Clears the input after posting
+      if (!response.ok) {
+        console.error("Failed to post tweet:", response.statusText);
+        return;
+      }
+
+      await getFeed();
+      newTweetInput.value = ""; // Clears the input after posting
+    } catch (error) {
+      console.error("Error posting tweet:", error);
+      alert("An error occurred while posting the tweet.");
+    }
   };
 
   postTweetButton.addEventListener("click", postTweet);
@@ -106,9 +120,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   logoutButton.addEventListener("click", () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user"); // Remove user data on logout
-    window.location.href = "/login.html";
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user"); // Remove user data on logout
+      window.location.href = "/login.html";
+    } catch (error) {
+      console.error("Error during logout:", error);
+      alert("An error occurred during logout.");
+    }
   });
 
   getFeed(); // Initial load of the feed

@@ -26,10 +26,14 @@ const seedUsersTable = async (db) => {
   ];
 
   for (const user of users) {
-    const hashedPassword = await bcrypt.hash(user.password, saltRounds);
-    db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [user.username, hashedPassword], (err) => {
-      if (err) console.error(err.message);
-    });
+    try {
+      const hashedPassword = await bcrypt.hash(user.password, saltRounds);
+      db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [user.username, hashedPassword], (err) => {
+        if (err) console.error(err.message);
+      });
+    } catch (err) {
+      console.error(`Error hashing password for user ${user.username}:`, err);
+    }
   }
 };
 

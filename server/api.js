@@ -7,15 +7,25 @@ let db;
 
 const SECRET_KEY = process.env.SECRET_KEY || "your_super_secret_key";
 
-// Logging function for all user activity
-const logActivity = (message) => {
+// Logging function for user activity
+const logUserActivity = (message) => {
   const timestamp = new Date().toISOString();
   const logEntry = `[${timestamp}] ${message}\n`;
-
-  // Logs to console and writes to server_logs.txt
   console.log(logEntry.trim());
+
+  fs.appendFile("user-activity_logs.txt", logEntry, (err) => {
+    if (err) console.error("Failed to write to user-activity_logs.txt:", err);
+  });
+};
+
+// Logging function for server errors
+const logServerError = (message) => {
+  const timestamp = new Date().toISOString();
+  const logEntry = `[${timestamp}] ERROR: ${message}\n`;
+  console.error(logEntry.trim());
+
   fs.appendFile("server_logs.txt", logEntry, (err) => {
-    if (err) console.error("Failed to write log:", err);
+    if (err) console.error("Failed to write to server_logs.txt:", err);
   });
 };
 
@@ -28,8 +38,12 @@ const visitLimit = rateLimit({
 
 // Initialize the API with database and routes
 const initializeAPI = async (app) => {
-  db = await initializeDatabase();
-  
+  try {
+    db = await initializeDatabase();
+  } catch (error) {
+    logServerError("Database initialization failed: " + error.message);
+  }
+
   app.post("/api/login", visitLimit, login);
   app.get("/api/feed", authenticateToken, getFeed);
   app.post("/api/feed", authenticateToken, postTweet);
@@ -45,20 +59,18 @@ const login = async (req, res) => {
 
     if (user.length === 1) {
       const validPassword = await bcrypt.compare(password, user[0].password);
-      console.log(`User found: ${username}, Password valid: ${validPassword}`);
-
       if (validPassword) {
         const token = jwt.sign({ userId: user[0].id, username: user[0].username }, SECRET_KEY, { expiresIn: '1h' });
-        logActivity(`Login successful for user: ${username}`);
+        logUserActivity(`Login successful for user: ${username}`);
         return res.json({ token, username: user[0].username });
       }
     }
 
-    logActivity(`Failed login attempt for username: ${username}`);
+    logUserActivity(`Failed login attempt for username: ${username}`);
     return res.status(401).json({ message: "Invalid credentials" });
-    
+
   } catch (error) {
-    console.error("Error during login:", error);
+    logServerError(`Error during login for user ${username}: ${error.message}`);
     return res.status(500).json({ message: "An error occurred during login" });
   }
 };
@@ -71,7 +83,10 @@ const authenticateToken = (req, res, next) => {
   if (!token) return res.sendStatus(401);
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) {
+      logServerError("Token verification failed: " + err.message);
+      return res.sendStatus(403);
+    }
     req.user = user;
     next();
   });
@@ -88,10 +103,10 @@ const getFeed = async (req, res) => {
 
   try {
     const tweets = await queryDB(db, sqlQuery, query ? [`%${query}%`] : []);
-    logActivity(`User: ${req.user.username} fetched the tweets`);
+    logUserActivity(`User: ${req.user.username} fetched the tweets`);
     res.json(tweets);
   } catch (error) {
-    console.error("Failed to fetch tweets:", error);
+    logServerError(`Failed to fetch tweets for user ${req.user.username}: ${error.message}`);
     res.status(500).json({ message: "Error fetching tweets" });
   }
 };
@@ -105,10 +120,10 @@ const postTweet = async (req, res) => {
   try {
     const sqlQuery = "INSERT INTO tweets (username, timestamp, text) VALUES (?, ?, ?)";
     await queryDB(db, sqlQuery, [username, timestamp, text]);
-    logActivity(`User ${username} posted a new tweet: "${text}"`);
+    logUserActivity(`User ${username} posted a new tweet: "${text}"`);
     res.status(201).json({ message: "Tweet posted successfully" });
   } catch (error) {
-    console.error("Failed to post tweet:", error);
+    logServerError(`Failed to post tweet for user ${username}: ${error.message}`);
     res.status(500).json({ message: "Error posting tweet" });
   }
 };

@@ -1,7 +1,0 @@
-[2024-11-13T14:33:22.942Z] Login successful for user: switzerchees
-[2024-11-13T14:33:23.148Z] User: switzerchees fetched the tweets
-[2024-11-13T14:43:41.029Z] User: switzerchees fetched the tweets
-[2024-11-13T14:43:58.273Z] User switzerchees posted a new tweet: ""
-[2024-11-13T14:43:58.287Z] User: switzerchees fetched the tweets
-[2024-11-13T14:47:53.313Z] Failed login attempt for username: switzerchees
-[2024-11-13T14:49:57.511Z] Failed login attempt for username: switzerchees
