@@ -15,7 +15,17 @@ app.use((req, res, next) => {
 
 // Define the logging middleware
 const logs = (req, res, next) => {
-  const ignorePaths = ['/styles.css', '/scripts/index.js', '/scripts/login.js', '/img/tweet.png', '/api/feed', '/', '/login.html', '/api/login', 'favicon.ico'];
+  const ignorePaths = [
+    "/styles.css",
+    "/scripts/index.js",
+    "/scripts/login.js",
+    "/img/tweet.png",
+    "/api/feed",
+    "/",
+    "/login.html",
+    "/api/login",
+    "favicon.ico",
+  ];
   if (ignorePaths.includes(req.path)) return next(); // Skip logging
 
   const timestamp = new Date().toISOString();

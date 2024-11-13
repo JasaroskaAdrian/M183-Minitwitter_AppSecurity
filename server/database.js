@@ -4,7 +4,7 @@ const saltRounds = 10;
 
 const tweetsTableExists =
   "SELECT name FROM sqlite_master WHERE type='table' AND name='tweets'";
-  const createTweetsTable = `CREATE TABLE tweets (
+const createTweetsTable = `CREATE TABLE tweets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT,
     timestamp TEXT,
@@ -20,25 +20,26 @@ const createUsersTable = `CREATE TABLE users (
 
 const seedUsersTable = async (db) => {
   const users = [
-    { username: 'switzerchees', password: '123456' },
-    { username: 'john', password: '123456' },
-    { username: 'jane', password: '123456' },
+    { username: "switzerchees", password: "123456" },
+    { username: "john", password: "123456" },
+    { username: "jane", password: "123456" },
   ];
 
   for (const user of users) {
     try {
       const hashedPassword = await bcrypt.hash(user.password, saltRounds);
-      db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [user.username, hashedPassword], (err) => {
-        if (err) console.error(err.message);
-      });
+      db.run(
+        `INSERT INTO users (username, password) VALUES (?, ?)`,
+        [user.username, hashedPassword],
+        (err) => {
+          if (err) console.error(err.message);
+        }
+      );
     } catch (err) {
       console.error(`Error hashing password for user ${user.username}:`, err);
     }
   }
 };
-
-
-
 
 // Initialize the database, creating tables if they don't exist
 const initializeDatabase = async () => {

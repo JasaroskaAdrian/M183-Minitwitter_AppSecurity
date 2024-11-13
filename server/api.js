@@ -2,10 +2,25 @@ const fs = require("fs");
 const { initializeDatabase, queryDB, insertDB } = require("./database");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const rateLimit = require('express-rate-limit');
+const rateLimit = require("express-rate-limit");
 let db;
 
 const SECRET_KEY = process.env.SECRET_KEY || "your_super_secret_key";
+
+// Function to escape potentially dangerous characters
+const escapeCode = (str) => {
+  if (!str) return ""; // Return an empty string if str is null or undefined
+  return str.replace(/[&<>"']/g, (match) => {
+    const escapeChars = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    };
+    return escapeChars[match];
+  });
+};
 
 // Logging function for user activity
 const logUserActivity = (message) => {
@@ -33,7 +48,9 @@ const logServerError = (message) => {
 const visitLimit = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 5,
-  message: { error: 'Further Requests Blocked, Too many Requests sent. Try again later.' },
+  message: {
+    error: "Further Requests Blocked, Too many Requests sent. Try again later.",
+  },
 });
 
 // Initialize the API with database and routes
@@ -60,7 +77,11 @@ const login = async (req, res) => {
     if (user.length === 1) {
       const validPassword = await bcrypt.compare(password, user[0].password);
       if (validPassword) {
-        const token = jwt.sign({ userId: user[0].id, username: user[0].username }, SECRET_KEY, { expiresIn: '1h' });
+        const token = jwt.sign(
+          { userId: user[0].id, username: user[0].username },
+          SECRET_KEY,
+          { expiresIn: "1h" }
+        );
         logUserActivity(`Login successful for user: ${username}`);
         return res.json({ token, username: user[0].username });
       }
@@ -68,7 +89,6 @@ const login = async (req, res) => {
 
     logUserActivity(`Failed login attempt for username: ${username}`);
     return res.status(401).json({ message: "Invalid credentials" });
-
   } catch (error) {
     logServerError(`Error during login for user ${username}: ${error.message}`);
     return res.status(500).json({ message: "An error occurred during login" });
@@ -94,7 +114,7 @@ const authenticateToken = (req, res, next) => {
 
 // Fetches tweets from the database
 const getFeed = async (req, res) => {
-  const query = req.query.q || '';
+  const query = req.query.q || "";
 
   let sqlQuery = "SELECT * FROM tweets ORDER BY id DESC";
   if (query) {
@@ -103,10 +123,19 @@ const getFeed = async (req, res) => {
 
   try {
     const tweets = await queryDB(db, sqlQuery, query ? [`%${query}%`] : []);
+
+    // Sanitize tweet text before sending it in response
+    const sanitizedTweets = tweets.map((tweet) => ({
+      ...tweet,
+      text: escapeCode(tweet.text), // Escape the tweet text
+    }));
+
     logUserActivity(`User: ${req.user.username} fetched the tweets`);
-    res.json(tweets);
+    res.json(sanitizedTweets);
   } catch (error) {
-    logServerError(`Failed to fetch tweets for user ${req.user.username}: ${error.message}`);
+    logServerError(
+      `Failed to fetch tweets for user ${req.user.username}: ${error.message}`
+    );
     res.status(500).json({ message: "Error fetching tweets" });
   }
 };
@@ -118,12 +147,18 @@ const postTweet = async (req, res) => {
   const timestamp = new Date().toISOString();
 
   try {
-    const sqlQuery = "INSERT INTO tweets (username, timestamp, text) VALUES (?, ?, ?)";
-    await queryDB(db, sqlQuery, [username, timestamp, text]);
-    logUserActivity(`User ${username} posted a new tweet: "${text}"`);
+    // Escape the tweet text to prevent XSS vulnerabilities
+    const sanitizedText = escapeCode(text);
+
+    const sqlQuery =
+      "INSERT INTO tweets (username, timestamp, text) VALUES (?, ?, ?)";
+    await queryDB(db, sqlQuery, [username, timestamp, sanitizedText]);
+    logUserActivity(`User ${username} posted a new tweet: "${sanitizedText}"`);
     res.status(201).json({ message: "Tweet posted successfully" });
   } catch (error) {
-    logServerError(`Failed to post tweet for user ${username}: ${error.message}`);
+    logServerError(
+      `Failed to post tweet for user ${username}: ${error.message}`
+    );
     res.status(500).json({ message: "Error posting tweet" });
   }
 };

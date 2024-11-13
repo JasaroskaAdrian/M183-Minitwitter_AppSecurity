@@ -37,11 +37,13 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (response.status === 401) {
           errorText.innerText = "Invalid username or password";
         } else {
-          errorText.innerText = "An unexpected error occurred. Please try again.";
+          errorText.innerText =
+            "An unexpected error occurred. Please try again.";
         }
       } catch (error) {
         console.error("Error processing the response:", error);
-        errorText.innerText = "Error processing the response. Please try again.";
+        errorText.innerText =
+          "Error processing the response. Please try again.";
       }
     } catch (error) {
       console.error("Login error:", error);

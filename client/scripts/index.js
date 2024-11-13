@@ -3,21 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const postTweetButton = document.getElementById("post-tweet");
   const logoutButton = document.getElementById("logout");
 
-  //This turns these &, <, >, "", ', into not potentially dangerous chars
-  const escapeCode = (str) => {
-    if (!str) return ''; // Return an empty string if str is null or undefined
-    return str.replace(/[&<>"']/g, (match) => {
-      const escapeChars = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
-      };
-      return escapeChars[match];
-    });
-  };
-
   const token = localStorage.getItem("token");
   if (!token) {
     window.location.href = "/login.html";
@@ -25,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Retrieve the user information from localStorage
   const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || !user.username || user === undefined) { 
+  if (!user || !user.username || user === undefined) {
     console.error("User information not found. Redirecting to login.");
     window.location.href = "/login.html";
   }
@@ -43,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="flex flex-col grow">
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between text-gray-200">
-                    <h3 class="font-semibold">${escapeCode(tweet.username)}</h3>
+                    <h3 class="font-semibold">${tweet.username}</h3>
                     <p class="text-sm">${date}</p>
                     </div>
                 </div>
